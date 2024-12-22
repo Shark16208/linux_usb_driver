@@ -10,7 +10,7 @@
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Sai Vittal Jadav");
-MODULE_DESCRIPTION("USB HID Keyboard Driver with Interrupt Transfers");
+MODULE_DESCRIPTION("USB Keyboard Driver with Interrupt Transfers");
 
 // Define device-specific VID and PID
 #define USB_VENDOR_ID 0x1234
@@ -39,7 +39,6 @@ MODULE_DEVICE_TABLE(usb, keyboard_table);
 static void keyboard_irq(struct urb *urb)
 {
     struct usb_keyboard *kbd = urb->context;
-
     if (urb->status == 0)
     { // Check if transfer was successful
         printk(KERN_INFO "Key press detected: %02x\n", kbd->irq_buffer[2]);
@@ -48,7 +47,6 @@ static void keyboard_irq(struct urb *urb)
     {
         printk(KERN_WARNING "Interrupt transfer failed: %d\n", urb->status);
     }
-
     // Resubmit the URB to continue polling
     if (usb_submit_urb(urb, GFP_ATOMIC))
     {
@@ -63,19 +61,15 @@ static int keyboard_probe(struct usb_interface *interface, const struct usb_devi
     struct usb_host_interface *host_iface;
     struct usb_endpoint_descriptor *endpoint;
     int pipe;
-
-    printk(KERN_INFO "USB HID Keyboard connected\n");
-
+    printk(KERN_INFO "USB Keyboard connected\n");
     kbd = kzalloc(sizeof(struct usb_keyboard), GFP_KERNEL);
     if (!kbd)
     {
         printk(KERN_ERR "Failed to allocate memory for USB keyboard\n");
         return -ENOMEM;
     }
-
     kbd->udev = usb_get_dev(interface_to_usbdev(interface));
     host_iface = interface->cur_altsetting;
-
     // Find the interrupt IN endpoint
     endpoint = &host_iface->endpoint[0].desc;
     if (!usb_endpoint_is_int_in(endpoint))
@@ -84,10 +78,8 @@ static int keyboard_probe(struct usb_interface *interface, const struct usb_devi
         kfree(kbd);
         return -ENODEV;
     }
-
     pipe = usb_rcvintpipe(kbd->udev, endpoint->bEndpointAddress);
     kbd->irq_interval = endpoint->bInterval;
-
     // Allocate interrupt buffer and URB
     kbd->irq_buffer = kzalloc(MAX_PACKET_SIZE, GFP_KERNEL);
     if (!kbd->irq_buffer)
@@ -96,7 +88,6 @@ static int keyboard_probe(struct usb_interface *interface, const struct usb_devi
         kfree(kbd);
         return -ENOMEM;
     }
-
     kbd->irq_urb = usb_alloc_urb(0, GFP_KERNEL);
     if (!kbd->irq_urb)
     {
@@ -105,11 +96,9 @@ static int keyboard_probe(struct usb_interface *interface, const struct usb_devi
         kfree(kbd);
         return -ENOMEM;
     }
-
     // Initialize the interrupt URB
     usb_fill_int_urb(kbd->irq_urb, kbd->udev, pipe, kbd->irq_buffer,
                      MAX_PACKET_SIZE, keyboard_irq, kbd, kbd->irq_interval);
-
     // Submit the interrupt URB
     if (usb_submit_urb(kbd->irq_urb, GFP_KERNEL))
     {
@@ -119,7 +108,6 @@ static int keyboard_probe(struct usb_interface *interface, const struct usb_devi
         kfree(kbd);
         return -EIO;
     }
-
     usb_set_intfdata(interface, kbd);
     return 0;
 }
@@ -128,7 +116,6 @@ static int keyboard_probe(struct usb_interface *interface, const struct usb_devi
 static void keyboard_disconnect(struct usb_interface *interface)
 {
     struct usb_keyboard *kbd = usb_get_intfdata(interface);
-
     usb_set_intfdata(interface, NULL);
     if (kbd)
     {
@@ -137,7 +124,6 @@ static void keyboard_disconnect(struct usb_interface *interface)
         kfree(kbd->irq_buffer);     // Free buffer
         kfree(kbd);                 // Free structure
     }
-
     printk(KERN_INFO "USB HID Keyboard disconnected\n");
 }
 
