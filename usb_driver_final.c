@@ -8,6 +8,7 @@
 #include <linux/miscdevice.h>
 #include <linux/slab.h>
 
+// Driver info
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Sai Vittal Jadav");
 MODULE_DESCRIPTION("USB Keyboard Driver with Interrupt Transfers");
